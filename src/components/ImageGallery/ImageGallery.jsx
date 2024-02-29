@@ -19,32 +19,22 @@ class ImageGallery extends Component {
   async componentDidUpdate(prevProps, prevState) {
     const { nameSearch } = this.props;
     const { page } = this.state;
-    const prevName = prevProps.nameSearch;
-
-    try {
-      if (nameSearch !== prevName || prevState.page !== page) {
-        this.setState({ status: 'pending' });
-        const data = await FetchApi(nameSearch, page);
-        if (nameSearch !== prevName && data.total) {
-          this.setState({
-            page: 1,
-            data,
-            status: 'resolve',
-          });
-          toast.success(`
-        Found according to your request ${data.total}`);
-        } else if (nameSearch === '') {
-          console.log(nameSearch);
-          this.setState({ data: [], status: 'reject', error: true });
-          toast.info("You haven't entered anything!");
-        } else {
-          this.setState({ data: [], status: 'reject', error: true });
-          toast.info('Unfortunately, your search returned no results 😐');
-        }
+    if (nameSearch !== prevProps.nameSearch) {
+      const newData = await FetchApi(nameSearch, page);
+      this.setState({ status: 'pending' });
+      if (nameSearch !== prevProps.nameSearch && newData.total)
+        this.setState({
+          page: 1,
+          data: [...newData.hits],
+          status: 'resolve',
+        });
+      else if (nameSearch === '' && !newData.total) {
+        this.setState({ status: 'idle', data: [] });
+        toast.info('Вы ничего не ввели!');
+      } else {
+        this.setState({ status: 'reject', data: [] });
+        toast(`По вашему запросу ${nameSearch} ничего не найденно`);
       }
-    } catch (error) {
-      this.setState({ status: 'reject', error });
-      console.log(error.message);
     }
   }
   getLargeImg = url => {
@@ -60,15 +50,14 @@ class ImageGallery extends Component {
         status: 'pending',
       }));
       const newData = await FetchApi(nameSearch, page + 1);
-      this.setState(prevState => ({
-        status: 'resolve',
-        data: {
-          ...prevState.data,
-          hits: [...prevState.data.hits, ...newData.hits],
-        },
-      }));
+      if (newData.total) {
+        this.setState(prevState => ({
+          status: 'resolve',
+          data: [...prevState.data, ...newData.hits],
+        }));
+      }
     } catch (error) {
-      this.setState({ status: 'reject' });
+      this.setState({ status: 'reject', error: true });
       console.log(error.message);
     }
   };
@@ -87,12 +76,7 @@ class ImageGallery extends Component {
       return (
         <div>
           <Cards>
-            {data.hits && (
-              <ImageGalleryItem
-                hits={data.hits}
-                getLargeImg={this.getLargeImg}
-              />
-            )}
+            <ImageGalleryItem hits={data} getLargeImg={this.getLargeImg} />
           </Cards>
           <LoadMore text="LoadMore..." handleLoadMore={this.handleLoadMore} />
           {showModal && url && (
@@ -105,6 +89,7 @@ class ImageGallery extends Component {
         </div>
       );
     }
+    return null;
   }
 }
 

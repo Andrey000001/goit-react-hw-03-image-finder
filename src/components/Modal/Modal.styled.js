@@ -6,7 +6,7 @@ export const Overlay = styled.div`
   height: 100vh;
   top: 0;
   left: 0;
-  background-color: #ccc;
+  background-color: #0000;
 `;
 
 export const ModalContent = styled.div`

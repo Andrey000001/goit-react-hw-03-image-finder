@@ -13,6 +13,7 @@ export const Header = styled.header`
   padding: 10px 0px;
   background-color: #2039ba;
   text-align: center;
+  box-shadow: 0px 4px 8px rgba(205, 192, 255, 0.6);
 `;
 export const Form = styled.form`
   display: flex;

@@ -6,7 +6,7 @@ export const Overlay = styled.div`
   height: 100vh;
   top: 0;
   left: 0;
-  background-color: #0000;
+  background: rgba(0, 36, 86, 0.5);
 `;
 
 export const ModalContent = styled.div`
@@ -14,4 +14,10 @@ export const ModalContent = styled.div`
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+`;
+
+export const Img = styled.img`
+  width: calc(100vw - 400px);
+  height: calc(100vh - 200px);
+  object-fit: cover;
 `;

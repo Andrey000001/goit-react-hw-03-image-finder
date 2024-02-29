@@ -13,4 +13,4 @@ export default async function FetchApi(nameSearch, page) {
   } catch (error) {
     console.log(error);
   }
-}
+} 

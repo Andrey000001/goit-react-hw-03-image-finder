@@ -1,11 +1,12 @@
 import { Component } from 'react';
-import FetchApi from 'components/Service/ServiceApi';
 import { ImageGalleryItem } from 'components/ImageGalleryItem/ImageGalleryItem';
+import { toast } from 'react-toastify';
+import { Cards } from './ImageGallery.styled';
+
+import FetchApi from 'components/Service/ServiceApi';
 import Modal from 'components/Modal/Modal';
 import LoadMore from 'components/Button/Button';
-import { toast } from 'react-toastify';
 import Loader from 'components/Loader/Loader';
-import { Cards } from './ImageGallery.styled';
 class ImageGallery extends Component {
   state = {
     data: [],
@@ -14,26 +15,36 @@ class ImageGallery extends Component {
     showModal: false,
     page: 1,
     error: false,
+    loadMoreBtn: false,
   };
 
   async componentDidUpdate(prevProps, prevState) {
     const { nameSearch } = this.props;
     const { page } = this.state;
-    if (nameSearch !== prevProps.nameSearch) {
-      const newData = await FetchApi(nameSearch, page);
+
+    if (nameSearch !== prevProps.nameSearch || page !== prevState.page) {
       this.setState({ status: 'pending' });
-      if (nameSearch !== prevProps.nameSearch && newData.total)
-        this.setState({
-          page: 1,
-          data: [...newData.hits],
-          status: 'resolve',
-        });
-      else if (nameSearch === '' && !newData.total) {
-        this.setState({ status: 'idle', data: [] });
-        toast.info('Вы ничего не ввели!');
-      } else {
-        this.setState({ status: 'reject', data: [] });
-        toast(`По вашему запросу ${nameSearch} ничего не найденно`);
+      try {
+        const newData = await FetchApi(nameSearch, page);
+        if (!newData.total) {
+          this.setState({ status: 'reject', data: [] });
+          toast.info('ЧтО ТО ПОШЛО НЕ ТАК ');
+        } else if (nameSearch === '' || newData.total === 0) {
+          this.setState({ status: 'reject' });
+          toast.info('Что то пошло не так!');
+        } else if (newData.hits.length < 12) {
+          this.setState({ loadMoreBtn: false, status: 'resolve' });
+        } else {
+          this.setState(state => ({
+            data: [...state.data, ...newData.hits],
+            status: 'resolve',
+            loadMoreBtn: true,
+          }));
+          toast.success(`По вашему запросу найденно ${newData.total}`);
+        }
+      } catch (error) {
+        this.setState({ error: true, status: 'reject' });
+        console.log(error.message);
       }
     }
   }
@@ -41,44 +52,26 @@ class ImageGallery extends Component {
     this.setState({ url, showModal: true });
   };
 
-  handleLoadMore = async () => {
-    const { nameSearch } = this.props;
-    const { page } = this.state;
-    try {
-      this.setState(prevState => ({
-        page: prevState.page + 1,
-        status: 'pending',
-      }));
-      const newData = await FetchApi(nameSearch, page + 1);
-      if (newData.total) {
-        this.setState(prevState => ({
-          status: 'resolve',
-          data: [...prevState.data, ...newData.hits],
-        }));
-      }
-    } catch (error) {
-      this.setState({ status: 'reject', error: true });
-      console.log(error.message);
-    }
+  handleLoadMore = () => {
+    this.setState(state => ({
+      page: state.page + 1,
+    }));
   };
   onCloseModal = () => {
     this.setState({ showModal: false });
   };
   render() {
-    const { data, url, showModal, status, error } = this.state;
-    if (status === 'pending') {
-      return <Loader />;
-    }
-    if (status === 'reject') {
-      return <div>{error.message}</div>;
-    }
+    const { data, url, showModal, status, error, loadMoreBtn } = this.state;
+
     if (status === 'resolve') {
       return (
         <div>
           <Cards>
             <ImageGalleryItem hits={data} getLargeImg={this.getLargeImg} />
           </Cards>
-          <LoadMore text="LoadMore..." handleLoadMore={this.handleLoadMore} />
+          {loadMoreBtn && (
+            <LoadMore text="LoadMore..." handleLoadMore={this.handleLoadMore} />
+          )}
           {showModal && url && (
             <Modal
               url={url}
@@ -88,6 +81,12 @@ class ImageGallery extends Component {
           )}
         </div>
       );
+    }
+    if (status === 'pending') {
+      return <Loader />;
+    }
+    if (status === 'reject') {
+      return <div>{error.message}</div>;
     }
     return null;
   }

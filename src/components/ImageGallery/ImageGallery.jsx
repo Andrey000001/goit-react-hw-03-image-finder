@@ -23,7 +23,7 @@ class ImageGallery extends Component {
     const { page } = this.state;
 
     if (nameSearch !== prevProps.nameSearch || page !== prevState.page) {
-      this.setState({ status: 'pending' });
+      this.setState({ status: 'pending', page: 1 });
       try {
         const newData = await FetchApi(nameSearch, page);
         if (!newData.total) {
@@ -36,7 +36,8 @@ class ImageGallery extends Component {
           this.setState({ loadMoreBtn: false, status: 'resolve' });
         } else {
           this.setState(state => ({
-            data: [...state.data, ...newData.hits],
+            data:
+              page > 1 ? [...state.data, ...newData.hits] : [...newData.hits],
             status: 'resolve',
             loadMoreBtn: true,
           }));

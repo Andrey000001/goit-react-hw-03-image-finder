@@ -23,15 +23,16 @@ class ImageGallery extends Component {
     const { page } = this.state;
 
     if (nameSearch !== prevProps.nameSearch || page !== prevState.page) {
-      this.setState({ status: 'pending', page: 1 });
       try {
         const newData = await FetchApi(nameSearch, page);
         if (!newData.total) {
-          this.setState({ status: 'reject', data: [] });
-          toast.info('ЧтО ТО ПОШЛО НЕ ТАК ');
+          this.setState({ data: [], loadMoreBtn: false, status: 'reject' });
+          toast.info(`По вашему запросу ${nameSearch} ничего не найденно `);
         } else if (nameSearch === '' || newData.total === 0) {
-          this.setState({ status: 'reject' });
-          toast.info('Что то пошло не так!');
+          this.setState({ loadMoreBtn: false, status: 'reject' });
+          toast.info('Вы ничего не ввели!');
+        } else if (nameSearch !== prevProps.nameSearch && page > 1) {
+          this.setState({ page: 1, data: [] });
         } else if (newData.hits.length < 12) {
           this.setState({ loadMoreBtn: false, status: 'resolve' });
         } else {
@@ -63,8 +64,10 @@ class ImageGallery extends Component {
   };
   render() {
     const { data, url, showModal, status, error, loadMoreBtn } = this.state;
-
-    if (status === 'resolve') {
+    if (status === 'pending') {
+      return <Loader />;
+    }
+    if (data) {
       return (
         <div>
           <Cards>
@@ -73,6 +76,7 @@ class ImageGallery extends Component {
           {loadMoreBtn && (
             <LoadMore text="LoadMore..." handleLoadMore={this.handleLoadMore} />
           )}
+
           {showModal && url && (
             <Modal
               url={url}
@@ -83,9 +87,7 @@ class ImageGallery extends Component {
         </div>
       );
     }
-    if (status === 'pending') {
-      return <Loader />;
-    }
+
     if (status === 'reject') {
       return <div>{error.message}</div>;
     }

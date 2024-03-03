@@ -23,6 +23,7 @@ class ImageGallery extends Component {
     const { page } = this.state;
 
     if (nameSearch !== prevProps.nameSearch || page !== prevState.page) {
+      this.setState({ status: 'pending' });
       try {
         const newData = await FetchApi(nameSearch, page);
         if (!newData.total) {
@@ -64,20 +65,18 @@ class ImageGallery extends Component {
   };
   render() {
     const { data, url, showModal, status, error, loadMoreBtn } = this.state;
-    if (status === 'pending') {
-      return <Loader />;
-    }
+
     if (data) {
       return (
         <div>
           <Cards>
             <ImageGalleryItem hits={data} getLargeImg={this.getLargeImg} />
           </Cards>
-          {loadMoreBtn && (
+          {status === 'pending' && <Loader />}
+          {loadMoreBtn && status !== 'pending' && (
             <LoadMore text="LoadMore..." handleLoadMore={this.handleLoadMore} />
           )}
-
-          {showModal && url && (
+          {showModal && (
             <Modal
               url={url}
               closeModal={this.onCloseModal}

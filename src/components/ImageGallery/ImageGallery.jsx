@@ -21,29 +21,25 @@ class ImageGallery extends Component {
   async componentDidUpdate(prevProps, prevState) {
     const { nameSearch } = this.props;
     const { page } = this.state;
-
+    console.log(prevProps);
     if (nameSearch !== prevProps.nameSearch || page !== prevState.page) {
       this.setState({ status: 'pending' });
       try {
         const newData = await FetchApi(nameSearch, page);
-        if (!newData.total) {
-          this.setState({ data: [], loadMoreBtn: false, status: 'reject' });
-          toast.info(`По вашему запросу ${nameSearch} ничего не найденно `);
-        } else if (nameSearch === '' || newData.total === 0) {
-          this.setState({ loadMoreBtn: false, status: 'reject' });
-          toast.info('Вы ничего не ввели!');
-        } else if (nameSearch !== prevProps.nameSearch && page > 1) {
-          this.setState({ page: 1, data: [] });
-        } else if (newData.hits.length < 12) {
-          this.setState({ loadMoreBtn: false, status: 'resolve' });
+        if (page > 1 && nameSearch !== prevProps.nameSearch) {
+          this.setState({ page: 1, loadMoreBtn: false, data: [] });
+        } else if (newData.total === 0 || nameSearch === '') {
+          this.setState({ status: 'reject', page: 1, data: [] });
+          toast.info(`Nothing was found for your request ${nameSearch}`);
         } else {
-          this.setState(state => ({
+          this.setState(prevState => ({
             data:
-              page > 1 ? [...state.data, ...newData.hits] : [...newData.hits],
+              nameSearch !== prevProps.nameSearch
+                ? [...newData.hits]
+                : [...prevState.data, ...newData.hits],
             status: 'resolve',
-            loadMoreBtn: true,
+            loadMoreBtn: newData.hits.length ? true : false,
           }));
-          toast.success(`По вашему запросу найденно ${newData.total}`);
         }
       } catch (error) {
         this.setState({ error: true, status: 'reject' });
@@ -64,33 +60,28 @@ class ImageGallery extends Component {
     this.setState({ showModal: false });
   };
   render() {
-    const { data, url, showModal, status, error, loadMoreBtn } = this.state;
-
-    if (data) {
-      return (
-        <div>
+    const { data, url, showModal, status, loadMoreBtn } = this.state;
+    return (
+      <div>
+        {data.length && (
           <Cards>
             <ImageGalleryItem hits={data} getLargeImg={this.getLargeImg} />
           </Cards>
-          {status === 'pending' && <Loader />}
-          {loadMoreBtn && status !== 'pending' && (
-            <LoadMore text="LoadMore..." handleLoadMore={this.handleLoadMore} />
-          )}
-          {showModal && (
-            <Modal
-              url={url}
-              closeModal={this.onCloseModal}
-              showModal={showModal}
-            />
-          )}
-        </div>
-      );
-    }
+        )}
+        {status === 'pending' && <Loader />}
+        {status !== 'pending' && loadMoreBtn && (
+          <LoadMore text="LoadMore..." handleLoadMore={this.handleLoadMore} />
+        )}
 
-    if (status === 'reject') {
-      return <div>{error.message}</div>;
-    }
-    return null;
+        {showModal && (
+          <Modal
+            url={url}
+            closeModal={this.onCloseModal}
+            showModal={showModal}
+          />
+        )}
+      </div>
+    );
   }
 }
 

@@ -2,7 +2,7 @@ import { Button } from './Button.styled';
 const LoadMore = ({ text, handleLoadMore }) => {
   return (
     <>
-      <Button type="button" onClick={handleLoadMore}>
+      <Button type="button" onClick={() => handleLoadMore()}>
         {text}
       </Button>
     </>

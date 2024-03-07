@@ -4,9 +4,11 @@ import { Cards } from './ImageGallery.styled';
 const ImageGallery = ({ data, getLargeImg }) => {
   return (
     <>
-      <Cards>
-        <ImageGalleryItem data={data} getLargeImg={getLargeImg} />
-      </Cards>
+      {data.length > 0 && (
+        <Cards>
+          <ImageGalleryItem data={data} getLargeImg={getLargeImg} />
+        </Cards>
+      )}
     </>
   );
 };
